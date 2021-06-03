@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 from geojson import FeatureCollection, LineString, Feature, GeoJSON, GeoJSONEncoder
 
-from CityGraph.indicator import IndicatorGroup
+from CityGraph.indicator.indicator_group import IndicatorGroup
 
 
 class CityGraph:

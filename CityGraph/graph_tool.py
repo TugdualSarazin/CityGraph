@@ -2,9 +2,6 @@ import networkx as nx
 
 
 def load_graph(shp_path):
-    import os
-    print(os.path.abspath(os.getcwd()))
-
     G = nx.read_shp(shp_path, simplify=False, geom_attrs=False)
     return G.to_undirected()
 
