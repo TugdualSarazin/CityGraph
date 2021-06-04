@@ -31,23 +31,24 @@ def load_footfall(footfall_fp, nrows=None):
     return ff
 
 
-def gen_traj_min_length(gdf, min_length):
-    tc = mpd.TrajectoryCollection(gdf, 'device_id', min_length=min_length)
-    print(f'Transformed footfall to trajectories ({len(tc)})')
-    return tc
+def gen_traj_min_length(gdf, traj_min_length, stop_max_diameter, stop_min_duration):
+    tc = mpd.TrajectoryCollection(gdf, 'device_id', min_length=traj_min_length)
+    print(f'Transformed footfall to trajectories of min_length={traj_min_length}m ({len(tc)})')
+
+    split_tc = mpd.StopSplitter(tc).split(max_diameter=stop_max_diameter, min_duration=stop_min_duration)
+    print(f'Split trajectories with max_diameter={stop_max_diameter}m and min_duration={stop_min_duration} ({len(split_tc)})')
+    return split_tc
 
 
 def start_end_pts_max_speed(ff_tc):
     # Add speed to each part of the trajectory
     ff_tc.add_speed()
 
-    # TODO: generalize speed based on time (Diego video 17:48)
-    aa = mpd.StopSplitter(ff_tc).split(max_diameter=10, min_duration=timedelta(seconds=60))
-
-    exit()
 
     # Compute the maximum speed
     max_speed = [traj.df.speed.max() for traj in ff_tc.trajectories]
+
+    # TODO: generalize speed based on time (Diego video 17:48)
 
     # Start points with max_speed
     start_pts = ff_tc.get_start_locations()
@@ -61,18 +62,29 @@ def start_end_pts_max_speed(ff_tc):
 
 
 def main():
-    root_path = os.getcwd()+'/../'
+    data_folder_path = os.getcwd()+'/../data/'
 
     # Load points
-    #ff_points = load_footfall(root_path+'/data/Footfall_District/Footfall_District.shp')
-    ff_points = load_footfall(root_path+'/data/Footfall_District/Footfall_District.shp', nrows=1000)
+    #ff_points = load_footfall(data_folder_path+'/Footfall_District/Footfall_District.shp')
+    ff_points = load_footfall(data_folder_path+'/Footfall_District/Footfall_District.shp', nrows=1000)
 
     # Filter with district area
-    # ff_points = filter_geo_district(ff_points, root_path+'/data/district_filter_area/district_filter_area.shp')
+    # ff_points = filter_geo_district(ff_points, data_folder_path+'/district_filter_area/district_filter_area.shp')
 
     # Gen trajectory from footfall points and filter trajectory by length > 50m
-    ff_tc = gen_traj_min_length(ff_points, min_length=100)
+    ff_tc = gen_traj_min_length(ff_points,
+                                traj_min_length=50,
+                                stop_max_diameter=10,
+                                stop_min_duration=timedelta(seconds=120))
+
+    ff_tc.to_trajectories.to_file(data_folder_path+'/Footfall_Trajectories/Footfall_Trajectories.shp')
     # [print(traj, "\n--------------") for traj in ff_tc]
+
+    # Loaded footfall points (367808)
+    # Transformed footfall to trajectories of min_length=50m (3307)
+    # Split trajectories with max_diameter=10m and min_duration=0:02:00 (5387)
+
+    exit()
 
     # Extract start and end points of footfall trajectories and compute max_speed for each
     ff_start_pts, ff_end_pts = start_end_pts_max_speed(ff_tc)

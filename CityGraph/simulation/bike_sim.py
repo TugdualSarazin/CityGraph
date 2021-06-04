@@ -7,7 +7,12 @@ class BikeSim(Simulation):
     # bike = max_speed : [5.04 km/h, 28.8 km/h]
     min_speed = 1.4
     max_speed = 8.
-    indicator_groups = [
+
+    # Output indicator
+    out_indicator = Indicator10(key='BEQI', factor=0., name='BEQI')
+
+    # Input indicators
+    in_indicators = [
         IndicatorGroup(
             key='intersection_safety',
             grp_factor=0.42,

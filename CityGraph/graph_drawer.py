@@ -115,12 +115,12 @@ class Drawer:
 
     def graphs_basic_weight(self, fig, gs_elem):
         # Init grid spec
-        sqrt_elem = math.sqrt(len(self.graph.indicator_groups))
+        sqrt_elem = math.sqrt(len(self.graph.in_indicators))
         nb_row = math.floor(sqrt_elem)
         nb_col = math.ceil(sqrt_elem)
         inner_gs = gridspec.GridSpecFromSubplotSpec(nb_row, nb_col, subplot_spec=gs_elem, wspace=0.08, hspace=0.2)
         cax = 0
-        for ftr in self.graph.indicator_groups:
+        for ftr in self.graph.in_indicators:
             ax = fig.add_subplot(inner_gs[cax])
             self.graph_edge_feature(ax, ftr)
             cax += 1
@@ -250,7 +250,7 @@ class Drawer:
                 path_edges = apath.path_edges[:edges_num]
             else:
                 path_edges = apath.path_edges
-            attr_values = [self.graph.graph[u][v]['weight'] for u, v in path_edges]
+            attr_values = [self.graph.graph[u][v][self.graph.in_indicators.norm_key] for u, v in path_edges]
             label = f'{apath.agent_id}: {round(apath.weight, 2)}'
             ax.plot(attr_values, label=label, color=apath.color)
             ax.set_xlim([0, len(apath.path_edges)])

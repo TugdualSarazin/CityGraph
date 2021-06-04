@@ -1,23 +1,16 @@
-from CityGraph.indicator.indicator10 import Indicator10
+from CityGraph.indicator.Indicator import Indicator
+from CityGraph.indicator.indicator10 import Indicator10, denormalize10
 
 
-class IndicatorGroup:
-    key = None
-    norm_key = None
-    name = None
+class IndicatorGroup(Indicator):
     grp_factor = 0.
     indicators = []
 
     def __init__(self, key, grp_factor, indicators: [Indicator10], name=None):
-        self.key = key
-        self.norm_key = 'grp_norm_' + key
+        super().__init__(key, name)
 
         self.grp_factor = grp_factor
         self.indicators = indicators
-        if name:
-            self.name = name
-        else:
-            self.name = key
 
     def compute_group_edge(self, data_edge):
         grp_sum_val = 0
@@ -33,9 +26,10 @@ class IndicatorGroup:
         # Keys found for this group
         if grp_sum_factors > 0:
             # Normalize group indicator and save
-            norm_grp = grp_sum_val / grp_sum_factors
-            data_edge[self.norm_key] = norm_grp
-            return norm_grp
+            norm_val_grp = grp_sum_val / grp_sum_factors
+            data_edge[self.norm_key] = norm_val_grp
+            data_edge[self.key] = denormalize10(norm_val_grp)
+            return norm_val_grp
 
         # No key found for this groupd
         else:
@@ -43,7 +37,7 @@ class IndicatorGroup:
             return None
 
     def __str__(self):
-        return f'{self.key}(grp_factor={self.grp_factor}, indicatos:{self.indicators})'
+        return f'{self.key}(grp_factor={self.grp_factor}, indicators:{self.indicators})'
 
     def __repr__(self):
         return self.__str__()

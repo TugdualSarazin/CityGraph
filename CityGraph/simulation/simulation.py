@@ -2,14 +2,15 @@ import os
 
 import pandas as pd
 
-from CityGraph.agent_path_tools import create_agent_paths, save_agent_paths
+from CityGraph.agent_path import create_agent_paths, save_agent_paths
 from CityGraph.city_graph import CityGraph
 from CityGraph.graph_tool import load_graph
+from CityGraph.indicator.indicator10 import Indicator10
 from CityGraph.trajectory.nearest_semgent_ids import NearestSegmentIds
 
 
 class Simulation:
-    root_path = os.getcwd()+'/../'
+    root_path = os.getcwd() + '/../'
     name = None
     network_fp_shp = None
     agents_seg_ids_fp_csv = None
@@ -17,7 +18,8 @@ class Simulation:
     out_network_fp_geojson = None
     min_speed = None
     max_speed = None
-    indicator_groups = None
+    out_indicator = None
+    in_indicators = None
 
     def generate_agent_segment_ids(self, ff_start_pts, ff_end_pts):
         # Load nearest with segments network
@@ -60,14 +62,27 @@ class Simulation:
         # Load city graph
         graph = CityGraph(
             graph=load_graph(self.network_fp_shp),
-            indicator_groups=self.indicator_groups
+            in_indicators=self.in_indicators,
+            out_indicator=self.out_indicator
         )
+        print(f"Loaded {self.name} network ({len(graph.graph.edges)} edges)")
 
         # Load agent start points and compute their paths
         paths = create_agent_paths(graph, self.agents_seg_ids_fp_csv)
+        #paths = create_agent_paths(graph, self.agents_seg_ids_fp_csv, nrows=10)
         # Update the graph with the count path property
         graph.count_paths(paths)
 
+        # Save the agent path to geojson
         save_agent_paths(paths, self.agent_paths_fp_geojson)
 
-        graph.save_geojson(self.out_network_fp_geojson)
+        # Save the output network to geojson 4326
+        gdf = graph.save_geojson(filepath=self.out_network_fp_geojson,
+                                 save_out_indic=True,
+                                 save_npaths=True,
+                                 save_grp_indic=True,
+                                 save_leaf_indic=True,
+                                 with_normalize=False,
+                                 add_attributes=['fclass', 'name'])
+
+        print(f"Saved output network ({len(gdf)} lines) to {self.out_network_fp_geojson}")

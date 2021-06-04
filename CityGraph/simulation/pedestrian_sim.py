@@ -8,8 +8,11 @@ class PedestrianSim(Simulation):
     min_speed = 0
     max_speed = 1.4
 
-    # Indicators
-    indicator_groups = [
+    # Output indicator
+    out_indicator = Indicator10(key='PEQI', factor=0., name='PEQI')
+
+    # Input indicators
+    in_indicators = [
         IndicatorGroup(
             key='intersection_safety',
             grp_factor=1.05,

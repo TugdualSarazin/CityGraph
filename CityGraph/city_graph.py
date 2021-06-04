@@ -1,19 +1,24 @@
-import geojson
+import geopandas
 import networkx as nx
 import numpy as np
-from geojson import FeatureCollection, LineString, Feature, GeoJSON, GeoJSONEncoder
+import pandas as pd
+from shapely.geometry import LineString
 
+from CityGraph.indicator.indicator10 import Indicator10, denormalize10
 from CityGraph.indicator.indicator_group import IndicatorGroup
 
 
 class CityGraph:
-    def __init__(self, graph: nx.Graph, indicator_groups: [IndicatorGroup], geo_graph=True):
+    npaths_key = 'npaths'
+
+    def __init__(self, graph: nx.Graph, in_indicators: [IndicatorGroup], out_indicator: Indicator10,
+                 geo_graph=True):
         self.graph = graph
-        self.indicator_groups = indicator_groups
+        self.in_indicators = in_indicators
+        self.out_indicator = out_indicator
         self.geo_graph = geo_graph
         self.pos = self.pos()
         self.compute_indicators()
-        # EdgeType.set_agent_type_weights(self.graph)
 
     # TODO: need unit test
     def pos(self):
@@ -34,7 +39,7 @@ class CityGraph:
             all_grp_sum_val = 0
             all_grp_sum_factors = 0
             # Iterate all group indicators
-            for grp in self.indicator_groups:
+            for grp in self.in_indicators:
                 norm_grp = grp.compute_group_edge(d)
                 # If the group has match some keys add the value and factor
                 if norm_grp is not None:
@@ -43,9 +48,10 @@ class CityGraph:
 
             # Compute all groups
             if all_grp_sum_factors > 0:
-                # Normalize all groups indicator and save
+                # Normalize all groups indicator and write as edge property
                 norm_all_grp = all_grp_sum_val / all_grp_sum_factors
-                d['weight'] = norm_all_grp
+                d[self.out_indicator.norm_key] = norm_all_grp
+                d[self.out_indicator.key] = denormalize10(norm_all_grp)
             else:
                 raise Exception(f'Cannot find any indicators for edge: {d}')
 
@@ -56,21 +62,66 @@ class CityGraph:
         return None, None
 
     def count_paths(self, paths):
-        # Init npath to 0
+        # Init all npaths to 0
         for _, _, d in self.graph.edges(data=True):
-            d['npaths'] = 0
+            d[self.npaths_key] = 0
 
-        # Increment npath
+        # Increment npaths
         for path in paths:
             for e in path.path_edges:
-                self.graph.edges[e]['npaths'] += 1
+                self.graph.edges[e][self.npaths_key] += 1
 
-    def save_geojson(self, filepath):
+    def save_geojson(self, filepath,
+                     save_out_indic=True,
+                     save_npaths=True,
+                     save_grp_indic=True,
+                     save_leaf_indic=True,
+                     with_normalize=False,
+                     add_attributes=[]):
+        # Define output keys
+        output_keys = []
+        output_keys += add_attributes
+
+        # Add output indicator key
+        if save_out_indic:
+            output_keys.append(self.out_indicator.key)
+            if with_normalize:
+                output_keys.append(self.out_indicator.norm_key)
+
+        # Add npaths key
+        if save_npaths:
+            output_keys.append(self.npaths_key)
+
+        # Add input group indicators and indicators keys
+        for grp_indic in self.in_indicators:
+            # Group indic key
+            if save_grp_indic:
+                output_keys.append(grp_indic.key)
+                if with_normalize:
+                    output_keys.append(grp_indic.norm_key)
+
+            for indic in grp_indic.indicators:
+                # Leaf indic key
+                if save_leaf_indic:
+                    output_keys.append(indic.key)
+                    if with_normalize:
+                        output_keys.append(indic.norm_key)
+
         # Iterate edges and convert to geojson lines
         geo_feats = []
+
         for u, v, d in self.graph.edges(data=True):
-            line = LineString([u, v])
-            geo_feats.append(Feature(geometry=line, properties=d))
-        # Save geojson features
-        with open(filepath, 'w') as geojson_file:
-            geojson.dump(obj=FeatureCollection(geo_feats), fp=geojson_file)
+            # Add data filtered by key
+            out_data = {k: v for k, v in d.items() if k in output_keys}
+            # Add the geometry line
+            out_data['geometry'] = LineString([u, v])
+            geo_feats.append(out_data)
+
+        # Convert to geopandas with crs=EPSG:25831
+        gdf = geopandas.GeoDataFrame(pd.DataFrame(geo_feats), crs=25831)
+        # Convert it to EPSG:4326
+        gdf = gdf.to_crs(4326)
+        # Save it as a GeoJson
+        gdf.to_file(filepath, driver='GeoJSON')
+
+        return gdf
