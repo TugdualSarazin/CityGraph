@@ -3,9 +3,7 @@ from CityGraph.simulation.all_simulations import PedestrianCurrentScenarioSim, B
 
 def main():
     # TODO
-    # Split trajectories with stops
     # Apply Scenario rules
-    # Include VEQI
     # Include health -> Diana
     # Create JSON of the webapp
     # Process final score

@@ -26,4 +26,4 @@ class NearestSegmentIds:
         return self.segments_pts[self.segments_pts.geometry == nearest]['ID_unique'].head(1).item()
 
     def find_nearest_segments(self, points):
-        return points['geometry'].apply(lambda pt: self.nearest_ID_unique(pt))
+        return points.apply(lambda pt: self.nearest_ID_unique(pt))
