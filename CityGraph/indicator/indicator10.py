@@ -14,14 +14,13 @@ class Indicator10(Indicator):
     norm_key = None
     name = None
     factor = 0.
-    bigger_is_better = True
 
     def __init__(self, key, factor, name=None):
         super().__init__(key, name)
         self.factor = factor
 
     def compute_indicator_edge(self, data_edge):
-        val = data_edge.get(self.key)
+        val = self.get(data_edge)
         # If the value exists
         if val is not None:
             # Normalize indicator and save

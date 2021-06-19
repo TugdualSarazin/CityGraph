@@ -11,11 +11,14 @@ from CityGraph.indicator.indicator_group import IndicatorGroup
 class CityGraph:
     npaths_key = 'npaths'
 
-    def __init__(self, graph: nx.Graph, in_indicators: [IndicatorGroup], out_indicator: Indicator10,
+    def __init__(self, graph: nx.Graph,
+                 in_indicators: [IndicatorGroup], out_indicator: Indicator10,
+                 health_indicators: [IndicatorGroup],
                  geo_graph=True):
         self.graph = graph
         self.in_indicators = in_indicators
         self.out_indicator = out_indicator
+        self.health_indicators = health_indicators
         self.geo_graph = geo_graph
         self.pos = self.pos()
         self.compute_indicators()
@@ -35,16 +38,19 @@ class CityGraph:
     def compute_indicators(self):
         # Iterate edges
         for u, v, d in self.graph.edges(data=True):
-            # length = d['length']
             all_grp_sum_val = 0
             all_grp_sum_factors = 0
-            # Iterate all group indicators
+            # Iterate all in group indicators
             for grp in self.in_indicators:
                 norm_grp = grp.compute_group_edge(d)
                 # If the group has match some keys add the value and factor
                 if norm_grp is not None:
                     all_grp_sum_val += norm_grp * grp.grp_factor
                     all_grp_sum_factors += grp.grp_factor
+
+            # Iterate all health group indicators
+            #for grp in self.health_indicators:
+            #    grp.compute_group_edge(d)
 
             # Compute all groups
             if all_grp_sum_factors > 0:
@@ -76,6 +82,8 @@ class CityGraph:
                      save_npaths=True,
                      save_grp_indic=True,
                      save_leaf_indic=True,
+                     save_health_grp_indic=True,
+                     save_health_leaf_indic=True,
                      with_normalize=False,
                      add_attributes=[]):
         # Define output keys
@@ -92,7 +100,7 @@ class CityGraph:
         if save_npaths:
             output_keys.append(self.npaths_key)
 
-        # Add input group indicators and indicators keys
+        # Add input group indicators and leaf indicators
         for grp_indic in self.in_indicators:
             # Group indic key
             if save_grp_indic:
@@ -106,6 +114,21 @@ class CityGraph:
                     output_keys.append(indic.key)
                     if with_normalize:
                         output_keys.append(indic.norm_key)
+
+        # Add input health group indicators and health leaf indicators
+        for health_grp_indic in self.health_indicators:
+            # Group health indic key
+            if save_health_grp_indic:
+                output_keys.append(health_grp_indic.key)
+                if with_normalize:
+                    output_keys.append(health_grp_indic.norm_key)
+
+            for health_indic in health_grp_indic.indicators:
+                # Leaf indic key
+                if save_health_leaf_indic:
+                    output_keys.append(health_indic.key)
+                    if with_normalize:
+                        output_keys.append(health_indic.norm_key)
 
         # Iterate edges and convert to geojson lines
         geo_feats = []

@@ -31,7 +31,7 @@ class IndicatorGroup(Indicator):
             data_edge[self.key] = denormalize10(norm_val_grp)
             return norm_val_grp
 
-        # No key found for this groupd
+        # No key found for this groupe
         else:
             data_edge[self.norm_key] = None
             return None

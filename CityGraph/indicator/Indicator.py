@@ -1,7 +1,4 @@
 class Indicator:
-    key = None
-    norm_key = None
-    name = None
 
     def __init__(self, key, name):
         self.key = key
@@ -11,3 +8,6 @@ class Indicator:
             self.name = name
         else:
             self.name = key
+
+    def get(self, edge_data):
+        return edge_data.get(self.key)

@@ -61,6 +61,40 @@ def load_mask():
     return mask_gdf
 
 
+# Load csv footfall: ../data/raw_footfall/day1Bcntrakingotherdays.csv
+# Footfall all spain: 2333399 points
+# Footfall Poblenou district: 96844 points
+# Save shp footfall district: ../data/raw_footfall/ff-day1-district
+#
+# Load csv footfall: ../data/raw_footfall/day2Bcntrakingotherdays.csv
+# Footfall all spain: 2161809 points
+# Footfall Poblenou district: 88253 points
+# Save shp footfall district: ../data/raw_footfall/ff-day2-district
+#
+# Load csv footfall: ../data/raw_footfall/day3Bcntrakingotherdays.csv
+# Footfall all spain: 2140885 points
+# Footfall Poblenou district: 87166 points
+# Save shp footfall district: ../data/raw_footfall/ff-day3-district
+#
+# Load csv footfall: ../data/raw_footfall/day4Bcntrakingotherdays.csv
+# Footfall all spain: 2177728 points
+# Footfall Poblenou district: 84504 points
+# Save shp footfall district: ../data/raw_footfall/ff-day4-district
+#
+# Load csv footfall: ../data/raw_footfall/day5Bcntrakingotherdays.csv
+# Footfall all spain: 2326168 points
+# Footfall Poblenou district: 91178 points
+# Save shp footfall district: ../data/raw_footfall/ff-day5-district
+#
+# Load csv footfall: ../data/raw_footfall/day6Bcntrakingotherdays.csv
+# Footfall all spain: 2548942 points
+# Footfall Poblenou district: 92670 points
+# Save shp footfall district: ../data/raw_footfall/ff-day6-district
+
+# ### Concat ###
+# Footfall concat district: 540615 points
+# Saved shp concat footfall district: ../data/raw_footfall/ff-all-district
+
 def main():
     # nrows = 1000
     nrows = None

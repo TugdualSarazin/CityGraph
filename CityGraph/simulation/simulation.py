@@ -5,6 +5,8 @@ from shapely.geometry import Point
 from CityGraph.agent_path import create_agent_paths, save_agent_paths
 from CityGraph.city_graph import CityGraph
 from CityGraph.graph_tool import load_graph
+from CityGraph.indicator.indicator10 import Indicator10
+from CityGraph.indicator.indicator_group import IndicatorGroup
 from CityGraph.trajectory.nearest_semgent_ids import NearestSegmentIds
 
 
@@ -15,10 +17,43 @@ class Simulation:
     agents_seg_ids_fp_csv = None
     agent_paths_fp_geojson = None
     out_network_fp_geojson = None
+    out_network_min_fp_geojson = None
     min_speed = None
     max_speed = None
     out_indicator = None
     in_indicators = None
+    health_indicators = [
+        IndicatorGroup(
+            key='physical_health',
+            grp_factor=1.,
+            indicators=[
+                Indicator10(key='H1.1NO2', factor=1., name='Physical health- NO2'),
+                Indicator10(key='H1.2PM10', factor=1., name='Physical health- PM10'),
+                Indicator10(key='H1.3PM2.5', factor=1., name='Physical health- PM2.5'),
+                Indicator10(key='H1.4hie', factor=1., name='Physical health- Heat Island effect'),
+                Indicator10(key='H1.5accide', factor=1., name='Physical health- Accidents '),
+            ]),
+        IndicatorGroup(
+            key='mental_health',
+            grp_factor=1.,
+            indicators=[
+                Indicator10(key='H2.1noise', factor=1., name='Mental Health - Noise'),
+                Indicator10(key='H2.2visibi', factor=1., name='Mental Health - Visibility'),
+                Indicator10(key='H2.3ndvi', factor=1., name='Mental health- NDVI'),
+                Indicator10(key='H2.4insec', factor=1., name='Mental health- Insecurity'),
+            ]),
+        IndicatorGroup(
+            key='social_health',
+            grp_factor=1.,
+            indicators=[
+                Indicator10(key='H3.1acc_pub', factor=1., name='Social Health- accessibility to public transport'),
+                Indicator10(key='H3.2acc_gen', factor=1., name='Social Health- general accessibility'),
+                Indicator10(key='H3.3poi_ped', factor=1.,
+                            name='Social Health - proximity of poi ( recreation, retail, restaurant for ped)'),
+                Indicator10(key='H3.3poi_bike', factor=1.,
+                            name='Social Health - proximity of poi (school, work, recreation for bike)'),
+            ])
+    ]
 
     def generate_agent_segment_ids(self, traj_gdf):
         print(f"\n==== Gen {self.name} start end ID_unique ====")
@@ -59,34 +94,41 @@ class Simulation:
         graph = CityGraph(
             graph=load_graph(self.network_fp_shp),
             in_indicators=self.in_indicators,
-            out_indicator=self.out_indicator
+            out_indicator=self.out_indicator,
+            health_indicators=self.health_indicators
         )
         print(f"Loaded {self.name} network ({len(graph.graph.edges)} edges)")
 
         # Load agent start points and compute their paths
         paths = create_agent_paths(graph, self.agents_seg_ids_fp_csv)
-        paths = create_agent_paths(graph, self.agents_seg_ids_fp_csv)
-        # paths = create_agent_paths(graph, self.agents_seg_ids_fp_csv, nrows=10)
         # Update the graph with the count path property
         graph.count_paths(paths)
 
         # Save the agent path to geojson
         save_agent_paths(paths, self.agent_paths_fp_geojson)
 
-        for u, v, d in graph.graph.edges(data=True):
-            if d['npaths'] >= 1:
-                d['3.6Trees'] = 9.09
-                d['B2.8trees'] = 7.27
+        # print(d)
 
-            print(d)
-
-        # Save the output network to geojson 4326
+        # Save the output network to geojson 4326 with all data
         gdf = graph.save_geojson(filepath=self.out_network_fp_geojson,
                                  save_out_indic=True,
                                  save_npaths=True,
                                  save_grp_indic=True,
                                  save_leaf_indic=True,
+                                 save_health_grp_indic=False,
+                                 save_health_leaf_indic=False,
                                  with_normalize=False,
-                                 add_attributes=['fclass', 'name'])
+                                 add_attributes=['fclass', 'name', 'ID_unique'])
+
+        # Save the output network to geojson 4326 with minimal data
+        gdf = graph.save_geojson(filepath=self.out_network_min_fp_geojson,
+                                 save_out_indic=True,
+                                 save_npaths=True,
+                                 save_grp_indic=False,
+                                 save_leaf_indic=False,
+                                 save_health_grp_indic=False,
+                                 save_health_leaf_indic=False,
+                                 with_normalize=False,
+                                 add_attributes=[])
 
         print(f"Saved output network ({len(gdf)} lines) to {self.out_network_fp_geojson}")
